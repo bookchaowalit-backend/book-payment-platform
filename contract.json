@@ -1,20 +1,79 @@
 {
+  "$schema": "./schema/book-platform.contract.v1.schema.json",
   "schema_version": "book-platform.contract.v1",
   "platform_id": "payment",
   "repository": "book-payment-platform",
   "status": "scaffolded",
   "api_version": "v1",
   "data_owner": "book-payment-platform",
-  "capabilities": ["platform-api", "health", "contract"],
-  "depends_on": [],
+  "capabilities": [
+    "payment-intent",
+    "checkout",
+    "billing",
+    "ledger",
+    "reconciliation"
+  ],
+  "depends_on": [
+    "identity",
+    "security",
+    "observability"
+  ],
   "current_implementation": {
     "repository": "solo-empire",
-    "source_path": "infra/api/stripe.ts"
+    "source_path": "infra/api/stripe.ts",
+    "source_paths": [
+      "infra/api/stripe.ts",
+      "infra/api/server.ts"
+    ],
+    "source_status": "current-implementation-in-solo-empire"
   },
   "migration": {
     "compatibility_adapter": "required",
     "shadow_parity": "pending",
     "cutover": "pending",
     "rollback": "required"
-  }
+  },
+  "migration_gates": [
+    "sandbox provider parity",
+    "webhook idempotency",
+    "ledger rollback"
+  ],
+  "surface_doc": "docs/CONTRACT-SURFACE.md",
+  "interfaces": [
+    {
+      "id": "payment.http.stripe-webhook",
+      "kind": "http",
+      "direction": "provides",
+      "name": "POST /api/webhook/stripe",
+      "status": "current-in-solo-empire",
+      "source": "infra/api/server.ts",
+      "auth": "Stripe-Signature v1 HMAC-SHA256 over `t.raw_body`, 300 s tolerance"
+    },
+    {
+      "id": "payment.table.webhook-log",
+      "kind": "table",
+      "direction": "provides",
+      "name": "webhook_log rows with source='stripe', external_id=<event id>, processed=0",
+      "status": "current-in-solo-empire",
+      "source": "infra/api/server.ts"
+    },
+    {
+      "id": "payment.http.revenue-webhook",
+      "kind": "http",
+      "direction": "provides",
+      "name": "POST /api/webhook/revenue (ledger candidate)",
+      "status": "current-in-solo-empire",
+      "source": "infra/api/server.ts",
+      "auth": "Bearer token with scope api:write plus Idempotency-Key header"
+    },
+    {
+      "id": "payment.consumes.identity-bearer",
+      "kind": "http",
+      "direction": "consumes",
+      "name": "Identity bearer-token check (`requireAuth`, scope `api:write`)",
+      "status": "current-in-solo-empire",
+      "source": "infra/api/auth.ts",
+      "auth": "Bearer token with scope api:write"
+    }
+  ]
 }
