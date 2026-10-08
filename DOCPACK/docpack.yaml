@@ -1,0 +1,8 @@
+system_id: bookchaowalit-backend/book-backend/book-payment-platform
+prefix: CARD
+brand: "BOOK PAYMENT PLATFORM"
+subtitle: "ขอบเขต contract ของ platform `payment` ยังไม่มี runtime"
+footer: "Book Payment Platform — Product Card"
+color: "#2f4b6e"
+audience: internal
+tier: L0
