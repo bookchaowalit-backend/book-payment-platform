@@ -6,7 +6,7 @@ This page documents the API, event, CLI, storage and configuration surface that
 listed there is missing from this page.
 
 - Platform: `payment` (contract `book-platform.contract.v1`, API `v1`)
-- Status: `scaffolded`; source status: `current-implementation-in-solo-empire`
+- Status: `pilot`; source status: `current-implementation-in-solo-empire`
 - Current implementation: `solo-empire` at `infra/api/stripe.ts`, `infra/api/server.ts`
 - Depends on: `identity`, `security`, `observability`
 
@@ -51,6 +51,28 @@ consumer.
 
 ## Out of scope
 
-No production provider integration, credential, database writer or customer
-payload lives in this repository. Record parity, privacy and rollback evidence
+No production activation, credentials or customer payloads are included.
+The v1 API owns its PostgreSQL migrations and database writes; it does not
+implement accounting ledger, tax filing or financial reconciliation. Record parity, privacy and rollback evidence
 in the parent platform registry before any cutover.
+
+## Implemented-local v1 API
+
+These are separate versioned routes in this owning repository; existing
+legacy compatibility surfaces above remain historical migration references.
+No legacy hub module is imported at runtime.
+
+- `payment.http.v1-runtime`: POST /v1/payment-intents; POST /v1/checkout; reconcile; GET intents; POST /v1/webhooks/provider; source `src/platform_payment/app.py`.
+- `payment.table.workspace-state`: FORCE RLS PostgreSQL durable service-owned state; source `src/platform_payment/migrations.py`.
+
+See [runtime contract](runtime.md) for request/response bounds, scopes, errors,
+migration instructions, provider configuration and remaining release gates.
+
+## Bounded subscription billing and refunds
+
+- `payment.http.billing`: POST /v1/billing/checkouts; subscriptions list/get/cancel; invoices list/get; source `src/platform_payment/billing_checkouts.py`.
+- `payment.http.refunds`: POST /v1/payment-intents/{id}/refunds; refund read/reconcile; source `src/platform_payment/refunds.py`.
+- `payment.cli.webhook-replay`: python -m platform_payment replay-webhooks --limit 50; source `src/platform_payment/pending_webhooks.py`.
+
+See [billing runtime](billing-runtime.md) for scopes, catalog authority, durable
+pre-binding events, refund reservations, migration002 and staged limitations.
